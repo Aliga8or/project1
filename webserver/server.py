@@ -47,22 +47,6 @@ DATABASEURI = "postgresql://ns3001:3r369@104.196.175.120/postgres"
 engine = create_engine(DATABASEURI)
 
 
-#
-# START SQLITE SETUP CODE
-#
-# after these statements run, you should see a file test.db in your webserver/ directory
-# this is a sqlite database that you can query like psql typing in the shell command line:
-# 
-#     sqlite3 test.db
-#
-# The following sqlite3 commands may be useful:
-# 
-#     .tables               -- will list the tables in the database
-#     .schema <tablename>   -- print CREATE TABLE statement for table
-# 
-# The setup code should be deleted once you switch to using the Part 2 postgresql database
-#
-
 
 @app.before_request
 def before_request():
@@ -124,11 +108,14 @@ def index():
   #
   # example of a database query
   #
+
+  '''
   cursor = g.conn.execute("SELECT name FROM users")
   names = []
   for result in cursor:
     names.append(result['name'])  # can also be accessed using result[0]
   cursor.close()
+  '''
 
   #
   # Flask uses Jinja templates, which is an extension to HTML where you can
@@ -156,21 +143,22 @@ def index():
   #     <div>{{n}}</div>
   #     {% endfor %}
   #
+  '''
   context = dict(data = names)
-
+  '''
 
   #
   # render_template looks in the templates/ folder for files.
   # for example, the below file reads template/index.html
   #
-  return render_template("index.html", **context)
+  return render_template("index.html")
 
 #
 # This is an example of a different path.  You can see it at
 # 
 #     localhost:8111/another
 #
-# notice that the functio name is another() rather than index()
+# notice that the function name is another() rather than index()
 # the functions for each app.route needs to have different names
 #
 @app.route('/another')
@@ -179,13 +167,18 @@ def another():
 
 
 # Example of adding new data to the database
-@app.route('/add', methods=['POST'])
-def add():
-  name = request.form['name']
-  print name
-  cmd = 'INSERT INTO test(name) VALUES (:name1), (:name2)';
-  g.conn.execute(text(cmd), name1 = name, name2 = name);
-  return redirect('/')
+@app.route('/search', methods=['GET'])
+def search():
+  tag = request.form['submit']
+  ingredient = request.form['ingredient']
+  cmd = 'SELECT rec.name FROM Ingredient as ing, Includes_ingredient as inc, recipe_create as rec WHERE ing.ing_id = inc.ing_id and inc.rid = rec.rid and ing.name = (:ingredient1)'
+  cursor = g.conn.execute(text(cmd), ingredient1 = ingredient)
+  names = []
+  for result in cursor:
+    names.append(result['name'])  # can also be accessed using result[0]
+  cursor.close()
+  context = dict(data = names)
+  return render_template("index.html", **context)
 
 
 @app.route('/login')

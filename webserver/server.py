@@ -1,20 +1,5 @@
 #!/usr/bin/env python2.7
 
-"""
-Columbia W4111 Intro to databases
-Example webserver
-
-To run locally
-
-    python server.py
-
-Go to http://localhost:8111 in your browser
-
-
-A debugger such as "pdb" may be helpful for debugging.
-Read about it online.
-"""
-
 import os
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
@@ -23,30 +8,8 @@ from flask import Flask, request, render_template, g, redirect, Response
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 
-
-#
-# The following uses the postgresql test.db -- you can use this for debugging purposes
-# However for the project you will need to connect to your Part 2 database in order to use the
-# data
-#
-# XXX: The URI should be in the format of: 
-#
-#     postgresql://USER:PASSWORD@<IP_OF_POSTGRE_SQL_SERVER>/postgres
-#
-# For example, if you had username ewu2493, password foobar, then the following line would be:
-#
-#     DATABASEURI = "postgresql://ewu2493:foobar@<IP_OF_POSTGRE_SQL_SERVER>/postgres"
-#
-# Swap out the URI below with the URI for the database created in part 2
 DATABASEURI = "postgresql://ns3001:3r369@104.196.175.120/postgres"
-
-
-#
-# This line creates a database engine that knows how to connect to the URI above
-#
 engine = create_engine(DATABASEURI)
-
-
 
 @app.before_request
 def before_request():
@@ -76,19 +39,6 @@ def teardown_request(exception):
     pass
 
 
-#
-# @app.route is a decorator around index() that means:
-#   run index() whenever the user tries to access the "/" path using a GET request
-#
-# If you wanted the user to go to e.g., localhost:8111/foobar/ with POST or GET then you could use
-#
-#       @app.route("/foobar/", methods=["POST", "GET"])
-#
-# PROTIP: (the trailing / in the path is important)
-# 
-# see for routing: http://flask.pocoo.org/docs/0.10/quickstart/#routing
-# see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-#
 @app.route('/')
 def index():
   """
@@ -109,13 +59,11 @@ def index():
   # example of a database query
   #
 
-  '''
   cursor = g.conn.execute("SELECT name FROM users")
   names = []
   for result in cursor:
     names.append(result['name'])  # can also be accessed using result[0]
   cursor.close()
-  '''
 
   #
   # Flask uses Jinja templates, which is an extension to HTML where you can
@@ -143,9 +91,9 @@ def index():
   #     <div>{{n}}</div>
   #     {% endfor %}
   #
-  '''
+
   context = dict(data = names)
-  '''
+
 
   #
   # render_template looks in the templates/ folder for files.
@@ -166,20 +114,24 @@ def another():
   return render_template("anotherfile.html")
 
 
-# Example of adding new data to the database
-@app.route('/search', methods=['GET'])
-def search():
-  tag = request.form['submit']
-  ingredient = request.form['ingredient']
-  cmd = 'SELECT rec.name FROM Ingredient as ing, Includes_ingredient as inc, recipe_create as rec WHERE ing.ing_id = inc.ing_id and inc.rid = rec.rid and ing.name = (:ingredient1)'
-  cursor = g.conn.execute(text(cmd), ingredient1 = ingredient)
-  names = []
-  for result in cursor:
-    names.append(result['name'])  # can also be accessed using result[0]
-  cursor.close()
-  context = dict(data = names)
-  return render_template("index.html", **context)
-
+@app.route('/recipe', methods=['GET', 'POST'])
+def recipe():
+  print "Entered recipe"
+  if request.method == 'POST':
+	  print "Entered POST"
+	  tag = request.form['tag']
+	  ingredient = request.form['ingredient']
+	  cmd = 'SELECT rec.name FROM Ingredient as ing, Includes_ingredient as inc, recipe_create as rec WHERE ing.ing_id = inc.ing_id and inc.rid = rec.rid and ing.name = (:ingredients)'
+	  cursor = g.conn.execute(text(cmd), ingredients = ingredient)
+	  rows = []
+	  for result in cursor:
+		rows.append(result['name'])
+	  cursor.close()
+	  context = dict(data = rows)
+	  print "Exiting POST"
+	  return render_template("recipe.html", **context)
+  print "Didn't enter GET, now exiting"
+  return render_template("recipe.html")
 
 @app.route('/login')
 def login():

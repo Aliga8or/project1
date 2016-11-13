@@ -1,28 +1,3 @@
-<html>
-  <style>
-    body{ 
-      font-size: 15pt;
-      font-family: arial;
-    }
-  </style>
-
-
-<body>
-  <h1>Search for a Recipe</h1>
- 
-
-<p><a href="/another">Go to the other page</a></p>
-<form method="GET" action="/">
-<p>Search: <input type="text" name="tag"> <input type="text" name="ingredient"> <input type="submit" name="Submit"></p>
-</form>
- <div>{{data}}</div>
-
-  <div>
-    {% for n in data %}
-    <div>{{n}}</div>
-    {% endfor %}
-  </div>
-</body>
-
-
-</html>
+{% extends "header.html" %}
+{% block content %}
+{% endblock %}

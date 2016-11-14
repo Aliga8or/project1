@@ -155,7 +155,7 @@ def show_recipe():
 	#recipe title
 	htmlStr += "<div class='special'>Recipe:</div>"
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		htmlStr += "<div class='eList'>"+str(result['name'])+" ("+str(result['cuisine'])+", "+str(result['category'])+")</div>"
 	#ingredients
 	htmlStr += "<div class='special'>Ingredients:</div>"
 	for result in cursor1:
@@ -175,6 +175,22 @@ def show_recipe():
 
   print "Exiting show recipe"
   return render_template("show_recipe.html", htmlStr=htmlStr)
+
+
+@app.route('/addrecipe', methods=['POST'])
+def addrecipe():
+  rid = 40 #assign later
+  uid = 1 #get from session later
+  rname = request.form['name']
+  rcuis = request.form['cuisine']
+  rcat = request.form['category']
+  rinst = request.form['instructions']
+  print name
+  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
+  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
+  return render_template("addingredients.html", rid=rid)
+
+  
 
 @app.route('/login')
 def login():

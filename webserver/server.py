@@ -151,7 +151,7 @@ def show_recipe():
 	cursor1 = g.conn.execute(text(cmd1), input_rid = rid)
 	cursor2 = g.conn.execute(text(cmd2), input_rid = rid)
 	cursor3 = g.conn.execute(text(cmd3), input_rid = rid)
-	cursor4 =
+	cursor4 = g.conn.execute(text(cmd4), input_rid = rid)
 	#recipe title
 	htmlStr += "<div class='special'>Recipe:</div>"
 	for result in cursor:

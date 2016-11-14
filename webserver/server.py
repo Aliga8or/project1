@@ -302,6 +302,8 @@ def show_recipe():
 	cursor2 = g.conn.execute(text(cmd2), input_rid = rid)
 	cursor3 = g.conn.execute(text(cmd3), input_rid = rid)
 	cursor4 = g.conn.execute(text(cmd4), input_rid = rid)
+	cache = [{'instructions': row['instructions'],} for row in cursor]
+
 	#recipe title
 	htmlStr += "<div class='special'>Recipe:</div>"
 	for result in cursor:
@@ -312,8 +314,8 @@ def show_recipe():
 		htmlStr += "<div class='eList'>"+str(result['quantity'])+" "+str(result['units'])+" "+str(result['name'])+"</div>"
 	#instructions
 	htmlStr += "<div class='special'>Instructions:</div>"
-	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['instructions'])+")</div>"
+	for result in cache:
+		htmlStr += "<div class='eList'>"+str(result['instructions'])+"</div>"
 	#tags
 	htmlStr += "<div class='special'>Tags:</div>"
 	for result in cursor2:
@@ -327,6 +329,11 @@ def show_recipe():
 	for result in cursor4:
 		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+str(result['name'])+"</a></div>"
 
+  cursor.close()
+  cursor1.close()
+  cursor2.close()
+  cursor3.close()
+  cursor4.close()
   print "Exiting show recipe"
   return render_template("show_recipe.html", htmlStr=htmlStr)
 
@@ -346,6 +353,7 @@ def addrecipe():
   print name
   cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
   g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
+  cursor.close()
   return render_template("addingredients.html", rid=rid)
 
 
@@ -365,6 +373,7 @@ def addingredients():
   cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
   g.conn.execute(text(cmd), rid1 = rid, name1 = name, cat = category)
   g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
+  cursor.close()
   return render_template("addingredients.html", rid=rid)
 
 @app.route('/login')

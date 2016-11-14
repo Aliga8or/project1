@@ -1,0 +1,25 @@
+{% extends "header.html" %}
+{% block content %}
+
+<h1>Enter the information and submit once for each ingredient in your recipe:</h1>
+<form method="POST" action="/adding">
+<p>Name: <input type="text" name="ing_name"> <br>
+Category: <select name="ing_cat">
+	<option>Fruit</option>
+	<option>Vegetable</option>
+	<option>Grains</option>
+	<option>Dairy</option>
+	<option>Meat</option>
+	<option>Spice</option>
+	<option>Sauce</option>
+</select> <br>
+Quantity: <input type="number" step="any" name="quantity"> <br>
+Units: <input type="text" name="units"> <br>
+<input type="hidden" name="rid" value={{rid}}>
+<input type="submit" name="Submit Ingredient">
+</p>
+</form>
+
+<p><a href="/">Return Home</a></p>
+
+{% endblock %}

@@ -283,6 +283,86 @@ def dashboard():
   print "Exiting Dashboard"
   return render_template("dashboard.html", htmlStr=htmlStr)
 
+@app.route('/show_recipe', methods=['GET'])
+def show_recipe():
+  print "Entered show recipe"
+  htmlStr = ""
+  if request.method == 'GET': 
+	print "Entered GET"
+	rid = 3 #get from session
+	
+	cmd = 'SELECT * FROM recipe_create WHERE rid=(:input_rid)'
+	cmd1 = 'SELECT ing.name, inc.quantity, inc.units FROM ingredient as ing, includes_ingredient as inc WHERE inc.rid=(:input_rid) AND inc.ing_id=ing.ing_id'
+	cmd2 = 'SELECT * FROM has_tag WHERE has_tag.rid = (:input_rid)'
+	cmd3 = 'SELECT u.name, c.content, c.post_time FROM comment_make as c, users as u WHERE c.rid=(:input_rid) AND c.uid = u.uid'
+	cmd4 = 'SELECT r.name FROM recipe_create as r, similar_recipes as s WHERE s.rid1 = (:input_rid) AND s.rid2=r.rid'
+
+	cursor = g.conn.execute(text(cmd), input_rid = rid)
+	cursor1 = g.conn.execute(text(cmd1), input_rid = rid)
+	cursor2 = g.conn.execute(text(cmd2), input_rid = rid)
+	cursor3 = g.conn.execute(text(cmd3), input_rid = rid)
+	cursor4 = g.conn.execute(text(cmd4), input_rid = rid)
+	#recipe title
+	htmlStr += "<div class='special'>Recipe:</div>"
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['name'])+" ("+str(result['cuisine'])+", "+str(result['category'])+")</div>"
+	#ingredients
+	htmlStr += "<div class='special'>Ingredients:</div>"
+	for result in cursor1:
+		htmlStr += "<div class='eList'>"+str(result['quantity'])+" "+str(result['units'])+" "+str(result['name'])+"</div>"
+	#tags
+	htmlStr += "<div class='special'>Tags:</div>"
+	for result in cursor2:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+	#comments
+	htmlStr += "<div class='special'>Comments:</div>"
+	for result in cursor3:
+		htmlStr += "<div class='eList'>("+str(result['post_time'])+") User "+str(result['name'])+" says: "+str(result['content'])+"</div>"
+	#similar recipes
+	htmlStr += "<div class='special'>Recipes Similar to This:</div>"
+	for result in cursor4:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+
+  print "Exiting show recipe"
+  return render_template("show_recipe.html", htmlStr=htmlStr)
+
+
+@app.route('/addrecipe', methods=['POST'])
+def addrecipe():
+  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
+  cursor = g.conn.execute(text(cmd1))
+  rid = 0
+  for result in cursor:
+    rid = int(result['rid'])+1 
+  uid = 1 #get from session later
+  rname = request.form['name']
+  rcuis = request.form['cuisine']
+  rcat = request.form['category']
+  rinst = request.form['instructions']
+  print name
+  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
+  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
+  return render_template("addingredients.html", rid=rid)
+
+
+@app.route('/addingredients', methods=['POST'])
+def addingredients():
+  rid = request.form['rid']
+  cmd2 = 'SELECT ing_id FROM ingredient WHERE ing_id = (SELECT MAX(ing_id) from ingredient)'
+  cursor = g.conn.execute(text(cmd2))
+  ing_id = 0
+  for result in cursor:
+    ing_id = int(result['ing_id'])+1 
+  quant = request.form['quantity']
+  units = request.form['units']
+  name = request.form['name']
+  category = request.form['ing_cat']
+  cmd = 'INSERT INTO ingredient VALUES ((:rid1), (:name1), (:cat))'
+  cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
+  g.conn.execute(text(cmd), rid1 = rid, name1 = name, cat = category)
+  g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
+  return render_template("addingredients.html", rid=rid)
+
 @app.route('/login')
 def login():
     abort(401)

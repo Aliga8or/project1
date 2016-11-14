@@ -179,7 +179,11 @@ def show_recipe():
 
 @app.route('/addrecipe', methods=['POST'])
 def addrecipe():
-  rid = 40 #assign later
+  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
+  cursor = g.conn.execute(text(cmd1))
+  rid = 0
+  for result in cursor:
+    rid = int(result['rid'])+1 
   uid = 1 #get from session later
   rname = request.form['name']
   rcuis = request.form['cuisine']
@@ -194,7 +198,11 @@ def addrecipe():
 @app.route('/addingredients', methods=['POST'])
 def addingredients():
   rid = request.form['rid']
-  ing_id = 50 #assign later
+  cmd2 = 'SELECT ing_id FROM ingredient WHERE ing_id = (SELECT MAX(ing_id) from ingredient)'
+  cursor = g.conn.execute(text(cmd2))
+  ing_id = 0
+  for result in cursor:
+    ing_id = int(result['ing_id'])+1 
   quant = request.form['quantity']
   units = request.form['units']
   name = request.form['name']

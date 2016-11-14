@@ -10,6 +10,7 @@ app = Flask(__name__, template_folder=tmpl_dir)
 
 DATABASEURI = "postgresql://ns3001:3r369@104.196.175.120/postgres"
 engine = create_engine(DATABASEURI)
+size = 20
 
 @app.before_request
 def before_request():
@@ -29,6 +30,7 @@ def before_request():
 
 @app.teardown_request
 def teardown_request(exception):
+  print "Executing teardown_request !!!"
   """
   At the end of the web request, this makes sure to close the database connection.
   If you don't the database could run out of memory!
@@ -114,24 +116,172 @@ def another():
   return render_template("anotherfile.html")
 
 
-@app.route('/recipe', methods=['GET', 'POST'])
-def recipe():
+@app.route('/search', methods=['GET', 'POST'])
+def search_recipe():
   print "Entered recipe"
+  htmlStr = "<form name='searchForm' action='/search' method='POST'>"
+  
+  cmd = 'SELECT DISTINCT cuisine FROM recipe_create'
+  cursor = g.conn.execute(text(cmd))
+  htmlStr += "<div class='special'> Cuisine: <select name='cuisine'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cursor:
+	htmlStr += "<option value='"+str(result['cuisine'])+"'>"+str(result['cuisine'])+"</option>"
+  htmlStr += "</select> </div>"
+  
+  cmd = 'SELECT DISTINCT category FROM recipe_create'
+  cursor = g.conn.execute(text(cmd))
+  htmlStr += "<div class='special'> Category: <select name='category'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cursor:
+	htmlStr += "<option value='"+str(result['category'])+"'>"+str(result['category'])+"</option>"
+  htmlStr += "</select> </div>"
+  
+  cmd = 'SELECT * FROM ingredient'
+  cursor = g.conn.execute(text(cmd))
+  cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
+  htmlStr += "<div class='special'> Ingredients: " 
+  
+  htmlStr += "<select name='ing1'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select>"
+  
+  htmlStr += "<select name='ing2'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select>"
+  
+  htmlStr += "<select name='ing3'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select>"
+  
+  htmlStr += "</div>"
+  
+  cmd = 'SELECT * FROM tags'
+  cursor = g.conn.execute(text(cmd))
+  cache = [{'name': row['name']} for row in cursor]
+  htmlStr += "<div class='special'> Tags: " 
+  
+  htmlStr += "<select name='tag1'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['name'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select>"
+  
+  htmlStr += "<select name='tag2'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['name'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select>"
+  
+  htmlStr += "<select name='tag3'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['name'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select>"
+  
+  htmlStr += "</div>"
+  
+  htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
+			  </button></div>"
+  
+  htmlStr += "</form>"
+		
   if request.method == 'POST':
 	  print "Entered POST"
-	  tag = request.form['tag']
-	  ingredient = request.form['ingredient']
-	  cmd = 'SELECT rec.name FROM Ingredient as ing, Includes_ingredient as inc, recipe_create as rec WHERE ing.ing_id = inc.ing_id and inc.rid = rec.rid and ing.name = (:ingredients)'
-	  cursor = g.conn.execute(text(cmd), ingredients = ingredient)
-	  rows = []
+	  cmd = 'SELECT distinct rec.rid as rid, rec.name as rname FROM includes_ingredient as inc, recipe_create as rec, has_tag as htg WHERE '
+	  cmd+= 'inc.rid=rec.rid and htg.rid=rec.rid '
+	  #print cmd
+	  
+	  print request.form['cuisine']
+	  if request.form['cuisine'] != 'NA':
+		cmd+= "and rec.cuisine='"+str(request.form['cuisine'])+"' "
+	  if request.form['category'] != 'NA':
+		cmd+= "and rec.category='"+str(request.form['category'])+"' "
+		
+	  cmd+="and (1=0 "
+	  ing_empty = 1
+	  if request.form['ing1'] != 'NA':
+		ing_empty=0
+		cmd+= 'or inc.ing_id='+str(request.form['ing1'])+' '
+	  if request.form['ing2'] != 'NA':
+		ing_empty=0
+		cmd+= 'or inc.ing_id='+str(request.form['ing2'])+' '
+	  if request.form['ing3'] != 'NA':
+		ing_empty=0
+		cmd+= 'or inc.ing_id='+str(request.form['ing3'])+' '
+	  if ing_empty==1:
+		cmd+="or 1=1 "
+		
+	  cmd+=") "
+	  cmd+="and (1=0 "
+	  tag_empty = 1
+	  if request.form['tag1'] != 'NA':
+		tag_empty=0
+		cmd+= "or htg.name='"+str(request.form['tag1'])+"' "
+	  if request.form['tag2'] != 'NA':
+		tag_empty=0
+		cmd+= "or htg.name='"+str(request.form['tag2'])+"' "
+	  if request.form['tag3'] != 'NA':
+		tag_empty=0
+		cmd+= "or htg.name='"+str(request.form['tag3'])+"' "
+	  if tag_empty==1:
+		cmd+="or 1=1 "
+
+	  cmd+=") "
+	  print cmd
+	  cursor = g.conn.execute(text(cmd))
 	  for result in cursor:
-		rows.append(result['name'])
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+str(result['rname'])+"</a></div>"
+		
 	  cursor.close()
-	  context = dict(data = rows)
 	  print "Exiting POST"
-	  return render_template("recipe.html", **context)
+	  return render_template("search.html", htmlStr=htmlStr)
   print "Didn't enter GET, now exiting"
-  return render_template("recipe.html")
+  return render_template("search.html", htmlStr=htmlStr)
+  
+@app.route('/dashboard', methods=['GET', 'POST'])
+def dashboard():
+  print "Entered Dashboard"
+  htmlStr = ""
+  if request.method == 'GET': #change to post after session implementation
+	print "Entered GET"
+	uid = 3 #get from session
+	
+	cmd = 'SELECT * FROM recipe_create WHERE uid=(:input_uid)'
+	cursor = g.conn.execute(text(cmd), input_uid = uid)
+	htmlStr += "<div class='special'> My Recipes: </div>"
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		
+	cmd = 'SELECT rec.name as name FROM favourites_recipe as fav, recipe_create as rec WHERE fav.rid = rec.rid and fav.uid = (:input_uid)'
+	cursor = g.conn.execute(text(cmd), input_uid = uid)
+	htmlStr += "<div class='special'> Favorites: </div>"
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		
+	cmd = 'SELECT rec.name as name, rate.rating as ratings FROM rates_recipe as rate, recipe_create as rec WHERE rate.rid = rec.rid and rate.uid =  (:input_uid)'
+	cursor = g.conn.execute(text(cmd), input_uid = uid)
+	htmlStr += "<div class='special'> My Ratings: </div>"
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+"You rated "+str(result['name'])+" "+str(result['ratings'])+"/5"+"</div>"
+		
+	cmd = 'SELECT rcc.name as name FROM recommended_recipe as rcm, recipe_create as rcc WHERE rcm.rid = rcc.rid and rcm.uid =  (:input_uid)'
+	cursor = g.conn.execute(text(cmd), input_uid = uid)
+	htmlStr += "<div class='special'> Recommended Recipes for you: </div>"
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+	
+	cursor.close()
+	
+  print "Exiting Dashboard"
+  return render_template("dashboard.html", htmlStr=htmlStr)
 
 @app.route('/show_recipe', methods=['GET'])
 def show_recipe():

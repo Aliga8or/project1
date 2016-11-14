@@ -3,10 +3,11 @@
 import os
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, render_template, g, redirect, Response
+from flask import Flask, session, request, render_template, g, redirect, Response
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
+app.secret_key = "hakuna_matata"
 
 DATABASEURI = "postgresql://ns3001:3r369@104.196.175.120/postgres"
 engine = create_engine(DATABASEURI)
@@ -41,80 +42,45 @@ def teardown_request(exception):
     pass
 
 
-@app.route('/')
+@app.route('/', methods = ['GET', 'POST'])
 def index():
-  """
-  request is a special object that Flask provides to access web request information:
+	htmlStr = "<form name='loginForm' action='/' method='POST'>"
+	htmlStr += "<div class='eList'>Username: <input type='text' name='username'></div>"
+	htmlStr += "<div class='eList'>Password: <input type='text' name='password'></div>"
+	htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
+			  </button></div>"
+			  
+	if request.method == 'POST':
+		uname = request.form['username']
+		pwd = request.form['password']
 
-  request.method:   "GET" or "POST"
-  request.form:     if the browser submitted a form, this contains the data in the form
-  request.args:     dictionary of URL arguments e.g., {a:1, b:2} for http://localhost?a=1&b=2
-
-  See its API: http://flask.pocoo.org/docs/0.10/api/#incoming-request-data
-  """
-
-  # DEBUG: this is debugging code to see what request looks like
-  print request.args
-
-
-  #
-  # example of a database query
-  #
-
-  cursor = g.conn.execute("SELECT name FROM users")
-  names = []
-  for result in cursor:
-    names.append(result['name'])  # can also be accessed using result[0]
-  cursor.close()
-
-  #
-  # Flask uses Jinja templates, which is an extension to HTML where you can
-  # pass data to a template and dynamically generate HTML based on the data
-  # (you can think of it as simple PHP)
-  # documentation: https://realpython.com/blog/python/primer-on-jinja-templating/
-  #
-  # You can see an example template in templates/index.html
-  #
-  # context are the variables that are passed to the template.
-  # for example, "data" key in the context variable defined below will be 
-  # accessible as a variable in index.html:
-  #
-  #     # will print: [u'grace hopper', u'alan turing', u'ada lovelace']
-  #     <div>{{data}}</div>
-  #     
-  #     # creates a <div> tag for each element in data
-  #     # will print: 
-  #     #
-  #     #   <div>grace hopper</div>
-  #     #   <div>alan turing</div>
-  #     #   <div>ada lovelace</div>
-  #     #
-  #     {% for n in data %}
-  #     <div>{{n}}</div>
-  #     {% endfor %}
-  #
-
-  context = dict(data = names)
-
-
-  #
-  # render_template looks in the templates/ folder for files.
-  # for example, the below file reads template/index.html
-  #
-  return render_template("index.html")
-
-#
-# This is an example of a different path.  You can see it at
-# 
-#     localhost:8111/another
-#
-# notice that the function name is another() rather than index()
-# the functions for each app.route needs to have different names
-#
-@app.route('/another')
-def another():
-  return render_template("anotherfile.html")
-
+		cmd = 'SELECT * FROM users WHERE username=(:username)'
+		cursor = g.conn.execute(text(cmd), username=uname)
+		result = cursor.fetchone()
+		if cursor.rowcount == 0:
+			htmlStr+="<div class='errList'>User not registered !!!</div>"
+		elif result['password'] != pwd:
+			htmlStr+="<div class='errList'>Password is incorrect !!!</div>"
+		else:
+			session['uid'] = result['uid']
+			session['name'] = result['name']
+			session['username'] = uname
+			return redirect('/dashboard')
+	  
+	return render_template('index.html', htmlStr=htmlStr);
+	
+@app.route('/logout', methods = ['GET', 'POST'])
+def logout():
+  if 'name' in session:
+	name = session['name']
+  else:
+	return redirect('/')
+  print "Logging out "+name
+  session.pop('username', None)
+  session.pop('name', None)
+  session.pop('uid', None)
+  return redirect('/')
 
 @app.route('/search', methods=['GET', 'POST'])
 def search_recipe():
@@ -249,10 +215,15 @@ def search_recipe():
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
   print "Entered Dashboard"
+  if 'uid' in session:
+	uid = session['uid']
+  else:
+	return redirect('/')
+  
   htmlStr = ""
   if request.method == 'GET': #change to post after session implementation
 	print "Entered GET"
-	uid = 3 #get from session
+	#uid = 3 #get from session
 	
 	cmd = 'SELECT * FROM recipe_create WHERE uid=(:input_uid)'
 	cursor = g.conn.execute(text(cmd), input_uid = uid)
@@ -338,23 +309,25 @@ def show_recipe():
   return render_template("show_recipe.html", htmlStr=htmlStr)
 
 
-@app.route('/addrecipe', methods=['POST'])
+@app.route('/addrecipe', methods=['GET', 'POST'])
 def addrecipe():
-  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
-  cursor = g.conn.execute(text(cmd1))
-  rid = 0
-  for result in cursor:
-    rid = int(result['rid'])+1 
-  uid = 1 #get from session later
-  rname = request.form['name']
-  rcuis = request.form['cuisine']
-  rcat = request.form['category']
-  rinst = request.form['instructions']
-  print name
-  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
-  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
-  cursor.close()
-  return render_template("addingredients.html", rid=rid)
+  if request.method == 'POST':
+	  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
+	  cursor = g.conn.execute(text(cmd1))
+	  rid = 0
+	  for result in cursor:
+		rid = int(result['rid'])+1 
+	  uid = 1 #get from session later
+	  rname = request.form['name']
+	  rcuis = request.form['cuisine']
+	  rcat = request.form['category']
+	  rinst = request.form['instructions']
+	  print name
+	  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
+	  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
+	  cursor.close()
+	  return render_template("addingredients.html", rid=rid)
+  return render_template('create_recipe.html')
 
 
 @app.route('/addingredients', methods=['POST'])
@@ -375,12 +348,6 @@ def addingredients():
   g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
   cursor.close()
   return render_template("addingredients.html", rid=rid)
-
-@app.route('/login')
-def login():
-    abort(401)
-    this_is_never_executed()
-
 
 if __name__ == "__main__":
   import click

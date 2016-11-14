@@ -59,6 +59,15 @@ body {
 	background-color:#B2CBFF;
 }
 
+.errList {
+	margin-left:10px;
+	margin-right:10px;
+	margin-top:10px;
+	margin-bottom:10px;
+	background-color:#D62C46;
+	color:#FFFFFF;
+}
+
 .eList {
 	margin-left:10px;
 	margin-right:10px;

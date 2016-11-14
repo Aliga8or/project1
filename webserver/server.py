@@ -133,6 +133,49 @@ def recipe():
   print "Didn't enter GET, now exiting"
   return render_template("recipe.html")
 
+@app.route('/show_recipe', methods=['GET'])
+def show_recipe():
+  print "Entered show recipe"
+  htmlStr = ""
+  if request.method == 'GET': 
+	print "Entered GET"
+	rid = 3 #get from session
+	
+	cmd = 'SELECT * FROM recipe_create WHERE rid=(:input_rid)'
+	cmd1 = 'SELECT ing.name, inc.quantity, inc.units FROM ingredient as ing, includes_ingredient as inc WHERE inc.rid=(:input_rid) AND inc.ing_id=ing.ing_id'
+	cmd2 = 'SELECT * FROM has_tag WHERE has_tag.rid = (:input_rid)'
+	cmd3 = 'SELECT u.name, c.content, c.post_time FROM comment_make as c, users as u WHERE c.rid=(:input_rid) AND c.uid = u.uid'
+	cmd4 = 'SELECT r.name FROM recipe_create as r, similar_recipes as s WHERE s.rid1 = (:input_rid) AND s.rid2=r.rid'
+
+	cursor = g.conn.execute(text(cmd), input_rid = rid)
+	cursor1 = g.conn.execute(text(cmd1), input_rid = rid)
+	cursor2 = g.conn.execute(text(cmd2), input_rid = rid)
+	cursor3 = g.conn.execute(text(cmd3), input_rid = rid)
+	cursor4 =
+	#recipe title
+	htmlStr += "<div class='special'>Recipe:</div>"
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+	#ingredients
+	htmlStr += "<div class='special'>Ingredients:</div>"
+	for result in cursor1:
+		htmlStr += "<div class='eList'>"+str(result['quantity'])+" "+str(result['units'])+" "+str(result['name'])+"</div>"
+	#tags
+	htmlStr += "<div class='special'>Tags:</div>"
+	for result in cursor2:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+	#comments
+	htmlStr += "<div class='special'>Comments:</div>"
+	for result in cursor3:
+		htmlStr += "<div class='eList'>("+str(result['post_time'])+") User "+str(result['name'])+" says: "+str(result['content'])+"</div>"
+	#similar recipes
+	htmlStr += "<div class='special'>Recipes Similar to This:</div>"
+	for result in cursor4:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+
+  print "Exiting show recipe"
+  return render_template("show_recipe.html", htmlStr=htmlStr)
+
 @app.route('/login')
 def login():
     abort(401)

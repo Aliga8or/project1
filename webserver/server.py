@@ -309,23 +309,25 @@ def show_recipe():
   return render_template("show_recipe.html", htmlStr=htmlStr)
 
 
-@app.route('/addrecipe', methods=['POST'])
+@app.route('/addrecipe', methods=['GET', 'POST'])
 def addrecipe():
-  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
-  cursor = g.conn.execute(text(cmd1))
-  rid = 0
-  for result in cursor:
-    rid = int(result['rid'])+1 
-  uid = 1 #get from session later
-  rname = request.form['name']
-  rcuis = request.form['cuisine']
-  rcat = request.form['category']
-  rinst = request.form['instructions']
-  print name
-  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
-  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
-  cursor.close()
-  return render_template("addingredients.html", rid=rid)
+  if request.method == 'POST':
+	  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
+	  cursor = g.conn.execute(text(cmd1))
+	  rid = 0
+	  for result in cursor:
+		rid = int(result['rid'])+1 
+	  uid = 1 #get from session later
+	  rname = request.form['name']
+	  rcuis = request.form['cuisine']
+	  rcat = request.form['category']
+	  rinst = request.form['instructions']
+	  print name
+	  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
+	  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
+	  cursor.close()
+	  return render_template("addingredients.html", rid=rid)
+  return render_template('create_recipe.html')
 
 
 @app.route('/addingredients', methods=['POST'])

@@ -295,7 +295,7 @@ def show_recipe():
 	cmd1 = 'SELECT ing.name, inc.quantity, inc.units FROM ingredient as ing, includes_ingredient as inc WHERE inc.rid=(:input_rid) AND inc.ing_id=ing.ing_id'
 	cmd2 = 'SELECT * FROM has_tag WHERE has_tag.rid = (:input_rid)'
 	cmd3 = 'SELECT u.name, c.content, c.post_time FROM comment_make as c, users as u WHERE c.rid=(:input_rid) AND c.uid = u.uid'
-	cmd4 = 'SELECT r.name FROM recipe_create as r, similar_recipes as s WHERE s.rid1 = (:input_rid) AND s.rid2=r.rid'
+	cmd4 = 'SELECT r.name, r.rid FROM recipe_create as r, similar_recipes as s WHERE s.rid1 = (:input_rid) AND s.rid2=r.rid'
 
 	cursor = g.conn.execute(text(cmd), input_rid = rid)
 	cursor1 = g.conn.execute(text(cmd1), input_rid = rid)
@@ -313,7 +313,7 @@ def show_recipe():
 	#instructions
 	htmlStr += "<div class='special'>Instructions:</div>"
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['insructions'])+")</div>"
+		htmlStr += "<div class='eList'>"+str(result['instructions'])+")</div>"
 	#tags
 	htmlStr += "<div class='special'>Tags:</div>"
 	for result in cursor2:
@@ -325,7 +325,7 @@ def show_recipe():
 	#similar recipes
 	htmlStr += "<div class='special'>Recipes Similar to This:</div>"
 	for result in cursor4:
-		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+str(result['name'])+"</a></div>"
 
   print "Exiting show recipe"
   return render_template("show_recipe.html", htmlStr=htmlStr)

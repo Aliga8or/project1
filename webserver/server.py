@@ -190,7 +190,20 @@ def addrecipe():
   g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
   return render_template("addingredients.html", rid=rid)
 
-  
+
+@app.route('/addingredients', methods=['POST'])
+def addingredients():
+  rid = request.form['rid']
+  ing_id = 50 #assign later
+  quant = request.form['quantity']
+  units = request.form['units']
+  name = request.form['name']
+  category = request.form['ing_cat']
+  cmd = 'INSERT INTO ingredient VALUES ((:rid1), (:name1), (:cat))'
+  cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
+  g.conn.execute(text(cmd), rid1 = rid, name1 = name, cat = category)
+  g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
+  return render_template("addingredients.html", rid=rid)
 
 @app.route('/login')
 def login():

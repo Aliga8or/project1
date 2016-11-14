@@ -260,19 +260,21 @@ def show_recipe():
   htmlStr = ""
   if request.method == 'GET': 
 	print "Entered GET"
-	rid = 3 #get from session
+	rid = request.args.get('rid')
 	
 	cmd = 'SELECT * FROM recipe_create WHERE rid=(:input_rid)'
 	cmd1 = 'SELECT ing.name, inc.quantity, inc.units FROM ingredient as ing, includes_ingredient as inc WHERE inc.rid=(:input_rid) AND inc.ing_id=ing.ing_id'
 	cmd2 = 'SELECT * FROM has_tag WHERE has_tag.rid = (:input_rid)'
 	cmd3 = 'SELECT u.name, c.content, c.post_time FROM comment_make as c, users as u WHERE c.rid=(:input_rid) AND c.uid = u.uid'
-	cmd4 = 'SELECT r.name FROM recipe_create as r, similar_recipes as s WHERE s.rid1 = (:input_rid) AND s.rid2=r.rid'
+	cmd4 = 'SELECT r.name, r.rid FROM recipe_create as r, similar_recipes as s WHERE s.rid1 = (:input_rid) AND s.rid2=r.rid'
 
 	cursor = g.conn.execute(text(cmd), input_rid = rid)
 	cursor1 = g.conn.execute(text(cmd1), input_rid = rid)
 	cursor2 = g.conn.execute(text(cmd2), input_rid = rid)
 	cursor3 = g.conn.execute(text(cmd3), input_rid = rid)
 	cursor4 = g.conn.execute(text(cmd4), input_rid = rid)
+	cache = [{'instructions': row['instructions'],} for row in cursor]
+
 	#recipe title
 	htmlStr += "<div class='special'>Recipe:</div>"
 	for result in cursor:
@@ -281,6 +283,10 @@ def show_recipe():
 	htmlStr += "<div class='special'>Ingredients:</div>"
 	for result in cursor1:
 		htmlStr += "<div class='eList'>"+str(result['quantity'])+" "+str(result['units'])+" "+str(result['name'])+"</div>"
+	#instructions
+	htmlStr += "<div class='special'>Instructions:</div>"
+	for result in cache:
+		htmlStr += "<div class='eList'>"+str(result['instructions'])+"</div>"
 	#tags
 	htmlStr += "<div class='special'>Tags:</div>"
 	for result in cursor2:
@@ -292,8 +298,13 @@ def show_recipe():
 	#similar recipes
 	htmlStr += "<div class='special'>Recipes Similar to This:</div>"
 	for result in cursor4:
-		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+str(result['name'])+"</a></div>"
 
+  cursor.close()
+  cursor1.close()
+  cursor2.close()
+  cursor3.close()
+  cursor4.close()
   print "Exiting show recipe"
   return render_template("show_recipe.html", htmlStr=htmlStr)
 
@@ -313,6 +324,7 @@ def addrecipe():
   print name
   cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
   g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
+  cursor.close()
   return render_template("addingredients.html", rid=rid)
 
 
@@ -332,6 +344,7 @@ def addingredients():
   cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
   g.conn.execute(text(cmd), rid1 = rid, name1 = name, cat = category)
   g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
+  cursor.close()
   return render_template("addingredients.html", rid=rid)
 
 if __name__ == "__main__":

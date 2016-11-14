@@ -289,7 +289,7 @@ def show_recipe():
   htmlStr = ""
   if request.method == 'GET': 
 	print "Entered GET"
-	rid = request.form['rid'] #from page that navigates to here
+	rid = request.args.get('rid')
 	
 	cmd = 'SELECT * FROM recipe_create WHERE rid=(:input_rid)'
 	cmd1 = 'SELECT ing.name, inc.quantity, inc.units FROM ingredient as ing, includes_ingredient as inc WHERE inc.rid=(:input_rid) AND inc.ing_id=ing.ing_id'
@@ -313,7 +313,7 @@ def show_recipe():
 	#instructions
 	htmlStr += "<div class='special'>Instructions:</div>"
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['insructions'])+"</div>"
+		htmlStr += "<div class='eList'>"+str(result['insructions'])+")</div>"
 	#tags
 	htmlStr += "<div class='special'>Tags:</div>"
 	for result in cursor2:
@@ -351,7 +351,7 @@ def addrecipe():
 
 @app.route('/addingredients', methods=['POST'])
 def addingredients():
-  rid = request.args.get('rid')
+  rid = request.form['rid']
   cmd2 = 'SELECT ing_id FROM ingredient WHERE ing_id = (SELECT MAX(ing_id) from ingredient)'
   cursor = g.conn.execute(text(cmd2))
   ing_id = 0

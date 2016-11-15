@@ -420,7 +420,7 @@ def addrecipe():
   return render_template('create_recipe.html', name=name)
 
 
-@app.route('/addingredients', methods=['POST'])
+@app.route('/addingredients', methods=['GET', 'POST'])
 def addingredients():
   if 'uid' in session:
 	uid = session['uid']

@@ -74,10 +74,10 @@ def index():
 	for result in cursor:
 		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
 	htmlStr += "<div class='special'>Top Rated Recipes:</div>"
-	cmd = 'SELECT r.name recipe, SUM(CAST(x.rating as float))/COUNT(CAST(x.rating as float)) as score FROM recipe_create as r, rates_recipe as x WHERE r.rid=x.rid GROUP BY r.name ORDER BY score DESC'
+	cmd = 'SELECT r.name as recipe, SUM(CAST(x.rating as float))/COUNT(CAST(x.rating as float)) as score FROM recipe_create as r, rates_recipe as x WHERE r.rid=x.rid GROUP BY r.name ORDER BY score DESC'
 	cursor = g.conn.execute(text(cmd))
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		htmlStr += "<div class='eList'>"+str(result['recipe'])+"</div>"
 
 	return render_template('index.html', htmlStr=htmlStr);
 	

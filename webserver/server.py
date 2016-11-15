@@ -298,7 +298,7 @@ def show_recipe():
 	htmlStr += "<div class='special'>Instructions:</div>"
 	for result in cache:
 
-		htmlStr += "<div class='eList'>"+str(result['instructions'])+"</div>"
+		htmlStr += "<div class='eList'>"+result['instructions'].encode('utf-8')+"</div>"
 	#tags
 	htmlStr += "<div class='special'>Tags:</div>"
 	for result in cursor2:

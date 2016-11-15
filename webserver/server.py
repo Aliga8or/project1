@@ -408,7 +408,7 @@ def addrecipe():
 	  for result in cursor:
 		rid = int(result['rid'])+1 
 	  #uid = 1 #get from session later
-	  rname = request.form['name']
+	  rname = request.form['ing_id']
 	  rcuis = request.form['cuisine']
 	  rcat = request.form['category']
 	  rinst = request.form['instructions']
@@ -430,19 +430,24 @@ def addingredients():
 	
   #htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
   
+  htmlStr = ""
+
   rid = request.form['rid']
-  cmd2 = 'SELECT ing_id FROM ingredient WHERE ing_id = (SELECT MAX(ing_id) from ingredient)'
-  cursor = g.conn.execute(text(cmd2))
-  ing_id = 0
-  for result in cursor:
-    ing_id = int(result['ing_id'])+1 
+  cmd = 'SELECT * FROM ingredient'
+  cursor = g.conn.execute(text(cmd))
+  cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
+  
+  htmlStr += "Ingredient Name: " 
+  
+  htmlStr += "<select name='ing_id'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select> <br>"
+  ing_id = request.form['ing_id']
   quant = request.form['quantity']
   units = request.form['units']
-  name = request.form['name']
-  category = request.form['ing_cat']
-  cmd = 'INSERT INTO ingredient VALUES ((:rid1), (:name1), (:cat))'
   cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
-  g.conn.execute(text(cmd), rid1 = rid, name1 = name, cat = category)
   g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
   cursor.close()
   return render_template("addingredients.html", rid=rid, name=name)

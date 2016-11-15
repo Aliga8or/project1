@@ -3,17 +3,8 @@
 <div class='logBar'>Hi, {{name}} !!!</div>
 
 <h1>Enter the information and submit once for each ingredient in your recipe:</h1>
-<form method="POST" action="/adding">
-<p>Name: <input type="text" name="ing_name"> <br>
-Category: <select name="ing_cat">
-	<option>Fruit</option>
-	<option>Vegetable</option>
-	<option>Grains</option>
-	<option>Dairy</option>
-	<option>Meat</option>
-	<option>Spice</option>
-	<option>Sauce</option>
-</select> <br>
+<form method="POST" action="/addingredients">
+{{htmlStr | safe}}}
 Quantity: <input type="number" step="any" name="quantity"> <br>
 Units: <input type="text" name="units"> <br>
 <input type="hidden" name="rid" value={{rid}}>
@@ -21,6 +12,6 @@ Units: <input type="text" name="units"> <br>
 </p>
 </form>
 
-<p><a href="/">Return Home</a></p>
+<p><a href="/dashboard">Return to Dashboard</a></p>
 
 {% endblock %}

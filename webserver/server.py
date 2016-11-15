@@ -68,7 +68,7 @@ def index():
 			session['name'] = result['name']
 			session['username'] = uname
 			return redirect('/dashboard')
-	  
+
 	return render_template('index.html', htmlStr=htmlStr);
 	
 @app.route('/logout', methods = ['GET', 'POST'])
@@ -263,7 +263,7 @@ def search_recipe():
 	  print cmd
 	  cursor = g.conn.execute(text(cmd))
 	  for result in cursor:
-		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+str(result['rname'])+"</a></div>"
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+result['rname'].encode('utf-8')+"</a></div>"
 		
 	  cursor.close()
 	  print "Exiting POST"
@@ -310,6 +310,17 @@ def dashboard():
 	for result in cursor:
 		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
 	
+	htmlStr += "<div class='special'>Top 3 Contributors:</div>"
+	cmd = 'SELECT u.name, COUNT(r.rid) as Recipes_Posted FROM users as u, recipe_create as r WHERE u.uid=r.uid GROUP BY u.name ORDER BY Recipes_Posted DESC LIMIT 3'
+	cursor = g.conn.execute(text(cmd))
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+	htmlStr += "<div class='special'>3 Top Rated Recipes:</div>"
+	cmd = 'SELECT r.name as recipe, SUM(CAST(x.rating as float))/COUNT(CAST(x.rating as float)) as score FROM recipe_create as r, rates_recipe as x WHERE r.rid=x.rid GROUP BY r.name ORDER BY score DESC LIMIT 3'
+	cursor = g.conn.execute(text(cmd))
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['recipe'])+"</div>"
+
 	cursor.close()
 	
   print "Exiting Dashboard"
@@ -354,7 +365,8 @@ def show_recipe():
 	#instructions
 	htmlStr += "<div class='special'>Instructions:</div>"
 	for result in cache:
-		htmlStr += "<div class='eList'>"+str(result['instructions'])+"</div>"
+
+		htmlStr += "<div class='eList'>"+result['instructions'].encode('utf-8')+"</div>"
 	#tags
 	htmlStr += "<div class='special'>Tags:</div>"
 	for result in cursor2:

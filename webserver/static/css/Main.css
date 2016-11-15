@@ -59,6 +59,15 @@ body {
 	background-color:#B2CBFF;
 }
 
+.logBar {
+	margin-left:10px;
+	margin-right:10px;
+	margin-top:10px;
+	margin-bottom:10px;
+	background-color:#FFD700;
+	text-align:right;
+}
+
 .errList {
 	margin-left:10px;
 	margin-right:10px;

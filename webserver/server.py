@@ -408,13 +408,13 @@ def addrecipe():
 	  for result in cursor:
 		rid = int(result['rid'])+1 
 	  #uid = 1 #get from session later
-	  rname = request.form['ing_id']
+	  rname = request.form['rec_name']
 	  rcuis = request.form['cuisine']
 	  rcat = request.form['category']
 	  rinst = request.form['instructions']
 	  print name
-	  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
-	  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
+	  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:rec_name), (:cuisine), (:category), (:instr))'
+	  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, rec_name = rname, cuisine = rcuis, category = rcat, instr = rinst)
 	  cursor.close()
 	  return render_template("addingredients.html", rid=rid, uid = uid)
   return render_template('create_recipe.html', name=name)

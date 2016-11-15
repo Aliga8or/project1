@@ -67,7 +67,18 @@ def index():
 			session['name'] = result['name']
 			session['username'] = uname
 			return redirect('/dashboard')
-	  
+
+	htmlStr += "<div class='special'>Top Contributors:</div>"
+	cmd = 'SELECT u.name, COUNT(r.rid) as Recipes_Posted FROM users as u, recipe_create as r WHERE u.uid=r.uid GROUP BY u.name ORDER BY Recipes_Posted DESC'
+	cursor = g.conn.execute(text(cmd))
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+	htmlStr += "<div class='special'>Top Rated Recipes:</div>"
+	cmd = 'SELECT r.name recipe, SUM(CAST(x.rating as float))/COUNT(CAST(x.rating as float)) as score FROM recipe_create as r, rates_recipe as x WHERE r.rid=x.rid GROUP BY r.name ORDER BY score DESC'
+	cursor = g.conn.execute(text(cmd))
+	for result in cursor:
+		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+
 	return render_template('index.html', htmlStr=htmlStr);
 	
 @app.route('/logout', methods = ['GET', 'POST'])
@@ -288,6 +299,7 @@ def show_recipe():
 	#instructions
 	htmlStr += "<div class='special'>Instructions:</div>"
 	for result in cache:
+
 		htmlStr += "<div class='eList'>"+str(result['instructions'])+"</div>"
 	#tags
 	htmlStr += "<div class='special'>Tags:</div>"

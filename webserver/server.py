@@ -50,6 +50,7 @@ def index():
 	htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
 				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
 			  </button></div>"
+	htmlStr += "</form>"
 			  
 	if request.method == 'POST':
 		uname = request.form['username']
@@ -81,11 +82,69 @@ def logout():
   session.pop('name', None)
   session.pop('uid', None)
   return redirect('/')
+  
+@app.route('/addrestaurant', methods = ['GET', 'POST'])
+def addrestaurant():
+  print "Entered addrestaurant"
+  if 'uid' in session:
+	uid = session['uid']
+	name = session['name']
+  else:
+	return redirect('/')
+	
+  htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
+  
+  htmlStr += "<form name='resForm' action='/addrestaurant' method='POST'>"
+  htmlStr += "<div class='eList'>Restaurant Name: <input type='text' name='resname'></div>"
+  htmlStr += "<div class='eList'>Restaurant Location: <input type='text' name='resloc'></div>"
+  
+  cmd = 'SELECT * FROM recipe_create'
+  cursor = g.conn.execute(text(cmd))
+  htmlStr += "<div class='eList'> Dish prepared: <select name='rec_id'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cursor:
+	htmlStr += "<option value='"+str(result['rid'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select> </div>"
+  
+  htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
+			  </button></div>"
+  
+  htmlStr += "</form>"
+  
+  if request.method == 'POST':
+	print "Enter POST"
+	if request.form['resname'] != "":
+		print "Restaurant name: "+request.form['resname']
+		cmd = 'SELECT MAX(res_id) as max_id from restaurant_add'
+		cursor = g.conn.execute(text(cmd))
+		result = cursor.fetchone()
+		res_id = int(result['max_id']) + 1
+		
+		cmd = 'INSERT INTO restaurant_add VALUES ((:id), (:userid), (:name), (:loc))'
+		cursor = g.conn.execute(text(cmd), id = res_id, userid = int(uid), name = request.form['resname'], loc = request.form['resloc'])
+		
+		if request.form['rec_id'] != 'NA':
+			cmd = 'INSERT INTO prepares_recipe VALUES ((:rec_id), (:restaurant_id))'
+			cursor = g.conn.execute(text(cmd), rec_id = int(request.form['rec_id']), restaurant_id = res_id)
+		htmlStr+="<div class='special'>Restaurant added successfully</div>"
+	else:
+		htmlStr+="<div class='errList'>Restaurant name is empty</div>"
+		
+  return render_template("restaurant.html", htmlStr=htmlStr)
 
 @app.route('/search', methods=['GET', 'POST'])
 def search_recipe():
   print "Entered recipe"
-  htmlStr = "<form name='searchForm' action='/search' method='POST'>"
+  if 'uid' in session:
+	uid = session['uid']
+	name = session['name']
+  else:
+	return redirect('/')
+	
+  htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
+  
+  htmlStr += "<form name='searchForm' action='/search' method='POST'>"
   
   cmd = 'SELECT DISTINCT cuisine FROM recipe_create'
   cursor = g.conn.execute(text(cmd))
@@ -217,10 +276,12 @@ def dashboard():
   print "Entered Dashboard"
   if 'uid' in session:
 	uid = session['uid']
+	name = session['name']
   else:
 	return redirect('/')
+	
+  htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
   
-  htmlStr = ""
   if request.method == 'GET': #change to post after session implementation
 	print "Entered GET"
 	#uid = 3 #get from session
@@ -257,10 +318,17 @@ def dashboard():
 @app.route('/show_recipe', methods=['GET'])
 def show_recipe():
   print "Entered show recipe"
-  htmlStr = ""
+  if 'uid' in session:
+	uid = session['uid']
+	name = session['name']
+  else:
+	return redirect('/')
+	
+  htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
+  
   if request.method == 'GET': 
 	print "Entered GET"
-	rid = request.args.get('rid')
+	rid = int(request.args.get('rid'))
 	
 	cmd = 'SELECT * FROM recipe_create WHERE rid=(:input_rid)'
 	cmd1 = 'SELECT ing.name, inc.quantity, inc.units FROM ingredient as ing, includes_ingredient as inc WHERE inc.rid=(:input_rid) AND inc.ing_id=ing.ing_id'
@@ -311,13 +379,21 @@ def show_recipe():
 
 @app.route('/addrecipe', methods=['GET', 'POST'])
 def addrecipe():
+  if 'uid' in session:
+	uid = session['uid']
+	name = session['name']
+  else:
+	return redirect('/')
+	
+  #htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
+  
   if request.method == 'POST':
 	  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
 	  cursor = g.conn.execute(text(cmd1))
 	  rid = 0
 	  for result in cursor:
 		rid = int(result['rid'])+1 
-	  uid = 1 #get from session later
+	  #uid = 1 #get from session later
 	  rname = request.form['name']
 	  rcuis = request.form['cuisine']
 	  rcat = request.form['category']
@@ -332,6 +408,14 @@ def addrecipe():
 
 @app.route('/addingredients', methods=['POST'])
 def addingredients():
+  if 'uid' in session:
+	uid = session['uid']
+	name = session['name']
+  else:
+	return redirect('/')
+	
+  #htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
+  
   rid = request.form['rid']
   cmd2 = 'SELECT ing_id FROM ingredient WHERE ing_id = (SELECT MAX(ing_id) from ingredient)'
   cursor = g.conn.execute(text(cmd2))

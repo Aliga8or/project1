@@ -450,7 +450,7 @@ def addingredients():
   cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
   g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
   cursor.close()
-  return render_template("addingredients.html", rid=rid, name=name)
+  return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr)
 
 if __name__ == "__main__":
   import click

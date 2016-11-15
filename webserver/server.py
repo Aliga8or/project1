@@ -204,7 +204,9 @@ def search_recipe():
 	  print cmd
 	  cursor = g.conn.execute(text(cmd))
 	  for result in cursor:
-		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+str(result['rname'])+"</a></div>"
+	  	r=result['rid'].encode('utf-8')
+	  	n=result['rname'].encode('utf-8')
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+r+"'>"+n+"</a></div>"
 		
 	  cursor.close()
 	  print "Exiting POST"

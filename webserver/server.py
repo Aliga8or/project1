@@ -340,6 +340,7 @@ def show_recipe():
   if request.method == 'GET': 
 	print "Entered GET"
 	rid = int(request.args.get('rid'))
+	print "rid:"+str(rid)
 	
 	cmd = 'SELECT * FROM recipe_create WHERE rid=(:input_rid)'
 	cmd1 = 'SELECT ing.name, inc.quantity, inc.units FROM ingredient as ing, includes_ingredient as inc WHERE inc.rid=(:input_rid) AND inc.ing_id=ing.ing_id'
@@ -352,11 +353,12 @@ def show_recipe():
 	cursor2 = g.conn.execute(text(cmd2), input_rid = rid)
 	cursor3 = g.conn.execute(text(cmd3), input_rid = rid)
 	cursor4 = g.conn.execute(text(cmd4), input_rid = rid)
-	cache = [{'instructions': row['instructions'],} for row in cursor]
+	cache = [{'name': row['name'], 'cuisine': row['cuisine'], 'category': row['category'], 'instructions': row['instructions']} for row in cursor]
 
 	#recipe title
 	htmlStr += "<div class='special'>Recipe:</div>"
-	for result in cursor:
+	for result in cache:
+		#print str(result['name'])
 		htmlStr += "<div class='eList'>"+str(result['name'])+" ("+str(result['cuisine'])+", "+str(result['category'])+")</div>"
 	#ingredients
 	htmlStr += "<div class='special'>Ingredients:</div>"

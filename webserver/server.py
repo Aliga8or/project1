@@ -414,8 +414,8 @@ def addrecipe():
 	  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:cuisine), (:category), (:instr))'
 	  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, cuisine = rcuis, category = rcat, instr = rinst)
 	  cursor.close()
-	  return render_template("addingredients.html", rid=rid)
-  return render_template('create_recipe.html')
+	  return render_template("addingredients.html", rid=rid, uid = uid)
+  return render_template('create_recipe.html', name=name)
 
 
 @app.route('/addingredients', methods=['POST'])
@@ -443,7 +443,7 @@ def addingredients():
   g.conn.execute(text(cmd), rid1 = rid, name1 = name, cat = category)
   g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
   cursor.close()
-  return render_template("addingredients.html", rid=rid)
+  return render_template("addingredients.html", rid=rid, name=name)
 
 if __name__ == "__main__":
   import click

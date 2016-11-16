@@ -46,7 +46,7 @@ def teardown_request(exception):
 def index():
 	htmlStr = "<form name='loginForm' action='/' method='POST'>"
 	htmlStr += "<div class='eList'>Username: <input type='text' name='username'></div>"
-	htmlStr += "<div class='eList'>Password: <input type='text' name='password'></div>"
+	htmlStr += "<div class='eList'>Password: <input type='password' name='password'></div>"
 	htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
 				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
 			  </button></div>"
@@ -95,7 +95,17 @@ def addrestaurant():
   htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
   
   htmlStr += "<form name='resForm' action='/addrestaurant' method='POST'>"
-  htmlStr += "<div class='eList'>Restaurant Name: <input type='text' name='resname'></div>"
+  htmlStr += "<div class='eList'>Restaurant Name: <input type='text' name='resname'>"
+  
+  cmd = 'SELECT * FROM restaurant_add'
+  cursor = g.conn.execute(text(cmd))
+  htmlStr += "<select name='res_id'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cursor:
+	htmlStr += "<option value='"+str(result['res_id'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select> </div>"
+  htmlStr += "<div class='special'>Enter a new Restaurant or select an existing one</div>"
+  
   htmlStr += "<div class='eList'>Restaurant Location: <input type='text' name='resloc'></div>"
   
   cmd = 'SELECT * FROM recipe_create'
@@ -128,6 +138,12 @@ def addrestaurant():
 			cmd = 'INSERT INTO prepares_recipe VALUES ((:rec_id), (:restaurant_id))'
 			cursor = g.conn.execute(text(cmd), rec_id = int(request.form['rec_id']), restaurant_id = res_id)
 		htmlStr+="<div class='special'>Restaurant added successfully</div>"
+	elif request.form['res_id'] != "NA":
+		if request.form['rec_id'] != 'NA':
+			cmd = 'INSERT INTO prepares_recipe VALUES ((:rec_id), (:restaurant_id))'
+			cursor = g.conn.execute(text(cmd), rec_id = int(request.form['rec_id']), restaurant_id = int(request.form['res_id']))
+		else:
+			htmlStr+="<div class='errList'>No Dish selected to process</div>"
 	else:
 		htmlStr+="<div class='errList'>Restaurant name is empty</div>"
 		

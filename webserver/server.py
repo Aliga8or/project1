@@ -444,11 +444,11 @@ def addingredients():
   
   htmlStr += "Ingredient Name: " 
   
-  htmlStr += "<select name='ing_id'>"
+  htmlStr += "<div class='eList'><select name='ing_id'>"
   htmlStr += "<option value='NA'>----------</option>"
   for result in cache:
 	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
-  htmlStr += "</select> <br>"
+  htmlStr += "</select></div>"
   
   if request.method == 'POST':
   	rid = request.form['rid']

@@ -64,7 +64,8 @@ body {
 	margin-right:10px;
 	margin-top:10px;
 	margin-bottom:10px;
-	background-color:#FFD700;
+	background-color:#000000;
+	color:#FFFFFF;
 	text-align:right;
 }
 
@@ -102,6 +103,16 @@ body {
 	background-color:#000000;
 }
 
+.logouttab {
+	float:left;
+	margin-top:15px;
+	margin-left:5px;
+	padding-left:5px;
+	padding-right:5px;
+	background-color:#FF0000;
+	color:#FFFFFF;
+}
+
 .edit {
 	overflow:hidden;
 }
@@ -109,7 +120,7 @@ body {
 /*Selector CSS*/
 
 /*Remove underlines and colour from <a> tag links*/
-.tag a, .navtabs a  {
+.tag a, .navtabs a, .logouttab a {
     text-decoration: none;
 	color: white !important;
 }

@@ -11,7 +11,7 @@ app.secret_key = "hakuna_matata"
 
 DATABASEURI = "postgresql://ns3001:3r369@104.196.175.120/postgres"
 engine = create_engine(DATABASEURI)
-size = 20
+size = 70
 
 @app.before_request
 def before_request():
@@ -50,8 +50,8 @@ def index():
 	htmlStr = "<form name='loginForm' action='/' method='POST'>"
 	htmlStr += "<div class='eList'>Username: <input type='text' name='username'></div>"
 	htmlStr += "<div class='eList'>Password: <input type='password' name='password'></div>"
-	htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
-				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
+	htmlStr += "<div align='center'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+				<img src='/static/img/submit.png' width='"+str(size)+"' height='"+str(size)+"' /> \
 			  </button></div>"
 	htmlStr += "</form>"
 			  
@@ -119,8 +119,8 @@ def addrestaurant():
 	htmlStr += "<option value='"+str(result['rid'])+"'>"+str(result['name'])+"</option>"
   htmlStr += "</select> </div>"
   
-  htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
-				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
+  htmlStr += "<div align='center'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+				<img src='/static/img/submit.png' width='"+str(size)+"' height='"+str(size)+"' /> \
 			  </button></div>"
   
   htmlStr += "</form>"
@@ -167,7 +167,7 @@ def search_recipe():
   
   cmd = 'SELECT DISTINCT cuisine FROM recipe_create ORDER BY cuisine'
   cursor = g.conn.execute(text(cmd))
-  htmlStr += "<div class='special'> Cuisine: <select name='cuisine'>"
+  htmlStr += "<div class='eList'> Cuisine: <select name='cuisine'>"
   htmlStr += "<option value='NA'>----------</option>"
   for result in cursor:
 	htmlStr += "<option value='"+str(result['cuisine'])+"'>"+str(result['cuisine'])+"</option>"
@@ -175,7 +175,7 @@ def search_recipe():
   
   cmd = 'SELECT DISTINCT category FROM recipe_create ORDER BY category'
   cursor = g.conn.execute(text(cmd))
-  htmlStr += "<div class='special'> Category: <select name='category'>"
+  htmlStr += "<div class='eList'> Category: <select name='category'>"
   htmlStr += "<option value='NA'>----------</option>"
   for result in cursor:
 	htmlStr += "<option value='"+str(result['category'])+"'>"+str(result['category'])+"</option>"
@@ -184,7 +184,7 @@ def search_recipe():
   cmd = 'SELECT * FROM ingredient ORDER BY name'
   cursor = g.conn.execute(text(cmd))
   cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
-  htmlStr += "<div class='special'> Ingredients: " 
+  htmlStr += "<div class='eList'> Ingredients: " 
   
   htmlStr += "<select name='ing1'>"
   htmlStr += "<option value='NA'>----------</option>"
@@ -209,7 +209,7 @@ def search_recipe():
   cmd = 'SELECT * FROM tags ORDER BY name'
   cursor = g.conn.execute(text(cmd))
   cache = [{'name': row['name']} for row in cursor]
-  htmlStr += "<div class='special'> Tags: " 
+  htmlStr += "<div class='eList'> Tags: " 
   
   htmlStr += "<select name='tag1'>"
   htmlStr += "<option value='NA'>----------</option>"
@@ -231,7 +231,7 @@ def search_recipe():
   
   htmlStr += "</div>"
   
-  htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+  htmlStr += "<div align='center'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
 				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
 			  </button></div>"
   
@@ -472,31 +472,41 @@ def addingredients():
   htmlStr = ""
 
   if request.method == 'GET':
+	print request.args.get('rid')			
+	if request.args.get('rid') == None:
+		print "rid is None, redirecting..."
+		return redirect('/addrecipe')
+
+	try:
+		print "In Try"
+		int(request.args.get('rid'))
+	except ValueError:
+		print "Exception NaN, redirecting..."
+		return redirect('/addrecipe')
+	
   	rid = int(request.args.get('rid'))
   
   cmd = 'SELECT * FROM ingredient ORDER BY name'
   cursor = g.conn.execute(text(cmd))
-  cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
+  cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor] 
   
-  htmlStr += "Ingredient Name: " 
-  
-  htmlStr += "<div class='eList'><select name='ing_id'>"
+  htmlStr += "<div class='eList'>Ingredient: <select name='ing_id'>"
   htmlStr += "<option value='NA'>----------</option>"
   for result in cache:
 	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
   htmlStr += "</select></div>"
   
   if request.method == 'POST':
-  	if request.form.['ing_id'] != 'NA'
+  	if request.form['ing_id'] != 'NA':
   		rid = request.form['rid']
   		ing_id = request.form['ing_id']
 	  	quant = request.form['quantity']
 	  	units = request.form['units']
 	  	cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
 	  	g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
-	  else:
-	  	error = "You must select an ingredient"
-	  	return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr, error=error)
+	else:
+		error = "You must select an ingredient"
+		return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr, error=error)
   cursor.close()
   return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr)
 

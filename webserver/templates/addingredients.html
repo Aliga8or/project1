@@ -7,9 +7,12 @@
 <div class='eList'>Quantity: <input type="number" step="0.01" name="quantity"></div>
 <div class='eList'>Units: <input type="text" name="units"></div>
 <input type="hidden" name="rid" value={{rid}}>
-<input type="submit" name="Submit Ingredient">
+
+<div align='center'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' >
+	<img src='/static/img/submit.png' width='70' height='70' />
+</button></div>
+
 </form>
 {{error}}
-<p><a href="/dashboard">Return to Dashboard</a></p>
 
 {% endblock %}

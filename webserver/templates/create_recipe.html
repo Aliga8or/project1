@@ -7,8 +7,12 @@
 <div class='eList'>Cuisine<font color='red'>*</font>: <input type="text" name="cuisine"></div>
 <div class='eList'>Category<font color='red'>*</font>: <input type="text" name="category"></div>
 <div class='eList'>Cooking Instructions: <textarea cols="30" rows="3" name="instructions"></textarea></div>
+
 {{htmlStr | safe}}
-<div class='special'><input type="submit" value="Add Recipe"></div></p>
+
+<div align='center'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' >
+	<img src='/static/img/submit.png' width='70' height='70' />
+</button></div>
 </form>
 <p>{{ error | safe }}</p>
 {% endblock %}

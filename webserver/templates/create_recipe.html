@@ -2,13 +2,12 @@
 {% block content %}
 <div class='logBar'>Hi, {{name}} !!!</div>
 
-<h1>Fill in following details to add a new recipe:</h1>
 <form method="POST" action="/addrecipe">
-<p>Recipe title: <input type="text" name="rec_name"> <br>
-Cuisine: <input type="text" name="cuisine"> <br>
-Category: <input type="text" name="category"> <br>
-Cooking Instructions: <textarea cols="30" rows="3" name="instructions"></textarea> <br>
+<div class='eList'>Recipe title: <input type="text" name="rec_name"></div>
+<div class='eList'>Cuisine: <input type="text" name="cuisine"></div>
+<div class='eList'>Category: <input type="text" name="category"></div>
+<div class='eList'>Cooking Instructions: <textarea cols="30" rows="3" name="instructions"></textarea></div>
 <input type="submit" value="Add Recipe"></p>
 </form>
-
+<p>{{error}}</p>
 {% endblock %}

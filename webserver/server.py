@@ -416,23 +416,26 @@ def addrecipe():
 	return redirect('/')
 	
   #htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
-  
+  error=""
   if request.method == 'POST':
-	  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
-	  cursor = g.conn.execute(text(cmd1))
-	  rid = 0
-	  for result in cursor:
-		rid = int(result['rid'])+1 
-	  #uid = 1 #get from session later
-	  rname = request.form['rec_name']
-	  rcuis = request.form['cuisine']
-	  rcat = request.form['category']
-	  rinst = request.form['instructions']
-	  print name
-	  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:rec_name), (:cuisine), (:category), (:instr))'
-	  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, rec_name = rname, cuisine = rcuis, category = rcat, instr = rinst)
-	  cursor.close()
-	  return render_template("addingredients.html", rid=rid, uid = uid)
+	  if request.form['rec_name'] != "":
+	  	cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
+	  	cursor = g.conn.execute(text(cmd1))
+	  	rid = 0
+	  	for result in cursor:
+			rid = int(result['rid'])+1 
+		rname = request.form['rec_name']
+		rcuis = request.form['cuisine']
+		rcat = request.form['category']
+		rinst = request.form['instructions']
+		print name
+		cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:rec_name), (:cuisine), (:category), (:instr))'
+	  	g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, rec_name = rname, cuisine = rcuis, category = rcat, instr = rinst)
+	  	cursor.close()
+	  	return redirect('/addingredients?rid='+str(rid))
+	  else:
+	  	error = "You cannot add a recipe with no title"
+	  	return render_template('create_recipe.html', name=name, error=error)
   return render_template('create_recipe.html', name=name)
 
 
@@ -448,25 +451,33 @@ def addingredients():
   
   htmlStr = ""
 
-  rid = request.form['rid']
+  if request.method == 'GET':
+  	rid = int(request.args.get('rid'))
+  
   cmd = 'SELECT * FROM ingredient'
   cursor = g.conn.execute(text(cmd))
   cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
   
   htmlStr += "Ingredient Name: " 
   
-  htmlStr += "<select name='ing_id'>"
+  htmlStr += "<div class='eList'><select name='ing_id'>"
   htmlStr += "<option value='NA'>----------</option>"
   for result in cache:
 	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
-  htmlStr += "</select> <br>"
-  ing_id = request.form['ing_id']
-  quant = request.form['quantity']
-  units = request.form['units']
-  cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
-  g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
+  htmlStr += "</select></div>"
+  
+  if request.method == 'POST':
+  	rid = request.form['rid']
+  	ing_id = request.form['ing_id']
+  	quant = request.form['quantity']
+  	units = request.form['units']
+  	cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
+  	g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
+  
   cursor.close()
   return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr)
+
+
 
 if __name__ == "__main__":
   import click

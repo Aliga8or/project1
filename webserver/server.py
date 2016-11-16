@@ -416,7 +416,7 @@ def addrecipe():
 		cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:rec_name), (:cuisine), (:category), (:instr))'
 	  	g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, rec_name = rname, cuisine = rcuis, category = rcat, instr = rinst)
 	  	cursor.close()
-	  	return redirect('/addingredients?rid='+rid+ uid = uid)
+	  	return redirect('/addingredients?rid='+rid)
 	  else:
 	  	error = "You cannot add a recipe with no title"
 	  	return render_template('create_recipe.html', name=name, error=error)

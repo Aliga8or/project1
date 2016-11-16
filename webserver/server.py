@@ -11,7 +11,7 @@ app.secret_key = "hakuna_matata"
 
 DATABASEURI = "postgresql://ns3001:3r369@104.196.175.120/postgres"
 engine = create_engine(DATABASEURI)
-size = 20
+size = 70
 
 @app.before_request
 def before_request():
@@ -44,11 +44,14 @@ def teardown_request(exception):
 
 @app.route('/', methods = ['GET', 'POST'])
 def index():
+	if 'uid' in session:
+		return redirect('/dashboard')
+	
 	htmlStr = "<form name='loginForm' action='/' method='POST'>"
 	htmlStr += "<div class='eList'>Username: <input type='text' name='username'></div>"
 	htmlStr += "<div class='eList'>Password: <input type='password' name='password'></div>"
-	htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
-				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
+	htmlStr += "<div align='center'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+				<img src='/static/img/submit.png' width='"+str(size)+"' height='"+str(size)+"' /> \
 			  </button></div>"
 	htmlStr += "</form>"
 			  
@@ -95,7 +98,7 @@ def addrestaurant():
   htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
   
   htmlStr += "<form name='resForm' action='/addrestaurant' method='POST'>"
-  htmlStr += "<div class='eList'>Restaurant Name: <input type='text' name='resname'>"
+  htmlStr += "<div class='eList'>Restaurant Name<font color='red'>*</font>: <input type='text' name='resname'>"
   
   cmd = 'SELECT * FROM restaurant_add'
   cursor = g.conn.execute(text(cmd))
@@ -116,8 +119,8 @@ def addrestaurant():
 	htmlStr += "<option value='"+str(result['rid'])+"'>"+str(result['name'])+"</option>"
   htmlStr += "</select> </div>"
   
-  htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
-				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
+  htmlStr += "<div align='center'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+				<img src='/static/img/submit.png' width='"+str(size)+"' height='"+str(size)+"' /> \
 			  </button></div>"
   
   htmlStr += "</form>"
@@ -162,26 +165,26 @@ def search_recipe():
   
   htmlStr += "<form name='searchForm' action='/search' method='POST'>"
   
-  cmd = 'SELECT DISTINCT cuisine FROM recipe_create'
+  cmd = 'SELECT DISTINCT cuisine FROM recipe_create ORDER BY cuisine'
   cursor = g.conn.execute(text(cmd))
-  htmlStr += "<div class='special'> Cuisine: <select name='cuisine'>"
+  htmlStr += "<div class='eList'> Cuisine: <select name='cuisine'>"
   htmlStr += "<option value='NA'>----------</option>"
   for result in cursor:
 	htmlStr += "<option value='"+str(result['cuisine'])+"'>"+str(result['cuisine'])+"</option>"
   htmlStr += "</select> </div>"
   
-  cmd = 'SELECT DISTINCT category FROM recipe_create'
+  cmd = 'SELECT DISTINCT category FROM recipe_create ORDER BY category'
   cursor = g.conn.execute(text(cmd))
-  htmlStr += "<div class='special'> Category: <select name='category'>"
+  htmlStr += "<div class='eList'> Category: <select name='category'>"
   htmlStr += "<option value='NA'>----------</option>"
   for result in cursor:
 	htmlStr += "<option value='"+str(result['category'])+"'>"+str(result['category'])+"</option>"
   htmlStr += "</select> </div>"
   
-  cmd = 'SELECT * FROM ingredient'
+  cmd = 'SELECT * FROM ingredient ORDER BY name'
   cursor = g.conn.execute(text(cmd))
   cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
-  htmlStr += "<div class='special'> Ingredients: " 
+  htmlStr += "<div class='eList'> Ingredients: " 
   
   htmlStr += "<select name='ing1'>"
   htmlStr += "<option value='NA'>----------</option>"
@@ -203,10 +206,10 @@ def search_recipe():
   
   htmlStr += "</div>"
   
-  cmd = 'SELECT * FROM tags'
+  cmd = 'SELECT * FROM tags ORDER BY name'
   cursor = g.conn.execute(text(cmd))
   cache = [{'name': row['name']} for row in cursor]
-  htmlStr += "<div class='special'> Tags: " 
+  htmlStr += "<div class='eList'> Tags: " 
   
   htmlStr += "<select name='tag1'>"
   htmlStr += "<option value='NA'>----------</option>"
@@ -228,7 +231,7 @@ def search_recipe():
   
   htmlStr += "</div>"
   
-  htmlStr += "<div class='special'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
+  htmlStr += "<div align='center'><button type='submit' name='submit' value='submit' style='background-color:inherit; border:0; cursor:pointer;' > \
 				<img src='/static/img/search.png' width='"+str(size)+"' height='"+str(size)+"' /> \
 			  </button></div>"
   
@@ -416,9 +419,21 @@ def addrecipe():
 	return redirect('/')
 	
   #htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
+  htmlStr = ""
+  cmd = 'SELECT * FROM tags ORDER BY name'
+  cursor = g.conn.execute(text(cmd))
+  cache = [{'name': row['name']} for row in cursor]
+  htmlStr += "<div class='eList'> Tags: " 
+  
+  htmlStr += "<select name='tag'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['name'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select></div>"
+  
   error=""
   if request.method == 'POST':
-	  if request.form['rec_name'] != "":
+	  if request.form['rec_name'] != "" and request.form['cuisine'] != "" and request.form['category'] != "":
 	  	cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
 	  	cursor = g.conn.execute(text(cmd1))
 	  	rid = 0
@@ -431,12 +446,17 @@ def addrecipe():
 		print name
 		cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:rec_name), (:cuisine), (:category), (:instr))'
 	  	g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, rec_name = rname, cuisine = rcuis, category = rcat, instr = rinst)
-	  	cursor.close()
+		
+		if request.form['tag'] != "NA":
+			cmd = 'INSERT INTO has_tag VALUES ((:tname), (:rid1))'
+			g.conn.execute(text(cmd), tname=request.form['tag'], rid1 = rid)
+	  	
+		cursor.close()
 	  	return redirect('/addingredients?rid='+str(rid))
 	  else:
-	  	error = "You cannot add a recipe with no title"
-	  	return render_template('create_recipe.html', name=name, error=error)
-  return render_template('create_recipe.html', name=name)
+	  	error = "<div class='errList'>Please fill in all values marked *</div>"
+	  	return render_template('create_recipe.html', name=name, error=error, htmlStr=htmlStr)
+  return render_template('create_recipe.html', name=name, htmlStr=htmlStr)
 
 
 @app.route('/addingredients', methods=['GET', 'POST'])
@@ -452,31 +472,41 @@ def addingredients():
   htmlStr = ""
 
   if request.method == 'GET':
+	print request.args.get('rid')			
+	if request.args.get('rid') == None:
+		print "rid is None, redirecting..."
+		return redirect('/addrecipe')
+
+	try:
+		print "In Try"
+		int(request.args.get('rid'))
+	except ValueError:
+		print "Exception NaN, redirecting..."
+		return redirect('/addrecipe')
+	
   	rid = int(request.args.get('rid'))
   
   cmd = 'SELECT * FROM ingredient ORDER BY name'
   cursor = g.conn.execute(text(cmd))
-  cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
+  cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor] 
   
-  htmlStr += "Ingredient Name: " 
-  
-  htmlStr += "<div class='eList'><select name='ing_id'>"
+  htmlStr += "<div class='eList'>Ingredient: <select name='ing_id'>"
   htmlStr += "<option value='NA'>----------</option>"
   for result in cache:
 	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
   htmlStr += "</select></div>"
   
   if request.method == 'POST':
-  	if request.form.['ing_id'] != 'NA'
+  	if request.form['ing_id'] != 'NA':
   		rid = request.form['rid']
   		ing_id = request.form['ing_id']
 	  	quant = request.form['quantity']
 	  	units = request.form['units']
 	  	cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
 	  	g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
-	  else:
-	  	error = "You must select an ingredient"
-	  	return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr, error=error)
+	else:
+		error = "You must select an ingredient"
+		return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr, error=error)
   cursor.close()
   return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr)
 

@@ -44,6 +44,9 @@ def teardown_request(exception):
 
 @app.route('/', methods = ['GET', 'POST'])
 def index():
+	if 'uid' in session:
+		return redirect('/dashboard')
+	
 	htmlStr = "<form name='loginForm' action='/' method='POST'>"
 	htmlStr += "<div class='eList'>Username: <input type='text' name='username'></div>"
 	htmlStr += "<div class='eList'>Password: <input type='password' name='password'></div>"
@@ -95,7 +98,7 @@ def addrestaurant():
   htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
   
   htmlStr += "<form name='resForm' action='/addrestaurant' method='POST'>"
-  htmlStr += "<div class='eList'>Restaurant Name: <input type='text' name='resname'>"
+  htmlStr += "<div class='eList'>Restaurant Name<font color='red'>*</font>: <input type='text' name='resname'>"
   
   cmd = 'SELECT * FROM restaurant_add'
   cursor = g.conn.execute(text(cmd))
@@ -162,7 +165,7 @@ def search_recipe():
   
   htmlStr += "<form name='searchForm' action='/search' method='POST'>"
   
-  cmd = 'SELECT DISTINCT cuisine FROM recipe_create'
+  cmd = 'SELECT DISTINCT cuisine FROM recipe_create ORDER BY cuisine'
   cursor = g.conn.execute(text(cmd))
   htmlStr += "<div class='special'> Cuisine: <select name='cuisine'>"
   htmlStr += "<option value='NA'>----------</option>"
@@ -170,7 +173,7 @@ def search_recipe():
 	htmlStr += "<option value='"+str(result['cuisine'])+"'>"+str(result['cuisine'])+"</option>"
   htmlStr += "</select> </div>"
   
-  cmd = 'SELECT DISTINCT category FROM recipe_create'
+  cmd = 'SELECT DISTINCT category FROM recipe_create ORDER BY category'
   cursor = g.conn.execute(text(cmd))
   htmlStr += "<div class='special'> Category: <select name='category'>"
   htmlStr += "<option value='NA'>----------</option>"
@@ -178,7 +181,7 @@ def search_recipe():
 	htmlStr += "<option value='"+str(result['category'])+"'>"+str(result['category'])+"</option>"
   htmlStr += "</select> </div>"
   
-  cmd = 'SELECT * FROM ingredient'
+  cmd = 'SELECT * FROM ingredient ORDER BY name'
   cursor = g.conn.execute(text(cmd))
   cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
   htmlStr += "<div class='special'> Ingredients: " 
@@ -203,7 +206,7 @@ def search_recipe():
   
   htmlStr += "</div>"
   
-  cmd = 'SELECT * FROM tags'
+  cmd = 'SELECT * FROM tags ORDER BY name'
   cursor = g.conn.execute(text(cmd))
   cache = [{'name': row['name']} for row in cursor]
   htmlStr += "<div class='special'> Tags: " 
@@ -416,9 +419,21 @@ def addrecipe():
 	return redirect('/')
 	
   #htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
+  htmlStr = ""
+  cmd = 'SELECT * FROM tags ORDER BY name'
+  cursor = g.conn.execute(text(cmd))
+  cache = [{'name': row['name']} for row in cursor]
+  htmlStr += "<div class='eList'> Tags: " 
+  
+  htmlStr += "<select name='tag'>"
+  htmlStr += "<option value='NA'>----------</option>"
+  for result in cache:
+	htmlStr += "<option value='"+str(result['name'])+"'>"+str(result['name'])+"</option>"
+  htmlStr += "</select></div>"
+  
   error=""
   if request.method == 'POST':
-	  if request.form['rec_name'] != "":
+	  if request.form['rec_name'] != "" and request.form['cuisine'] != "" and request.form['category'] != "":
 	  	cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
 	  	cursor = g.conn.execute(text(cmd1))
 	  	rid = 0
@@ -431,12 +446,17 @@ def addrecipe():
 		print name
 		cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:rec_name), (:cuisine), (:category), (:instr))'
 	  	g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, rec_name = rname, cuisine = rcuis, category = rcat, instr = rinst)
-	  	cursor.close()
+		
+		if request.form['tag'] != "NA":
+			cmd = 'INSERT INTO has_tag VALUES ((:tname), (:rid1))'
+			g.conn.execute(text(cmd), tname=request.form['tag'], rid1 = rid)
+	  	
+		cursor.close()
 	  	return redirect('/addingredients?rid='+str(rid))
 	  else:
-	  	error = "You cannot add a recipe with no title"
-	  	return render_template('create_recipe.html', name=name, error=error)
-  return render_template('create_recipe.html', name=name)
+	  	error = "<div class='errList'>Please fill in all values marked *</div>"
+	  	return render_template('create_recipe.html', name=name, error=error, htmlStr=htmlStr)
+  return render_template('create_recipe.html', name=name, htmlStr=htmlStr)
 
 
 @app.route('/addingredients', methods=['GET', 'POST'])

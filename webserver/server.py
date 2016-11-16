@@ -400,23 +400,26 @@ def addrecipe():
 	return redirect('/')
 	
   #htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
-  
+  error=""
   if request.method == 'POST':
-	  cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
-	  cursor = g.conn.execute(text(cmd1))
-	  rid = 0
-	  for result in cursor:
-		rid = int(result['rid'])+1 
-	  #uid = 1 #get from session later
-	  rname = request.form['rec_name']
-	  rcuis = request.form['cuisine']
-	  rcat = request.form['category']
-	  rinst = request.form['instructions']
-	  print name
-	  cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:rec_name), (:cuisine), (:category), (:instr))'
-	  g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, rec_name = rname, cuisine = rcuis, category = rcat, instr = rinst)
-	  cursor.close()
-	  return render_template("addingredients.html", rid=rid, uid = uid)
+	  if request.form['rec_name'] != "":
+	  	cmd1 = 'SELECT rid FROM recipe_create WHERE rid = (SELECT MAX(rid) from recipe_create)'
+	  	cursor = g.conn.execute(text(cmd1))
+	  	rid = 0
+	  	for result in cursor:
+			rid = int(result['rid'])+1 
+		rname = request.form['rec_name']
+		rcuis = request.form['cuisine']
+		rcat = request.form['category']
+		rinst = request.form['instructions']
+		print name
+		cmd = 'INSERT INTO recipe_create VALUES ((:rid1), (:uid1), (:rec_name), (:cuisine), (:category), (:instr))'
+	  	g.conn.execute(text(cmd), rid1 = rid, uid1 = uid, rec_name = rname, cuisine = rcuis, category = rcat, instr = rinst)
+	  	cursor.close()
+	  	return redirect('/addingredients?rid='+rid+ uid = uid)
+	  else:
+	  	error = "You cannot add a recipe with no title"
+	  	return render_template('create_recipe.html', name=name, error=error)
   return render_template('create_recipe.html', name=name)
 
 
@@ -432,7 +435,7 @@ def addingredients():
   
   htmlStr = ""
 
-  rid = request.form['rid']
+  rid = int(request.args.get('rid'))
   cmd = 'SELECT * FROM ingredient'
   cursor = g.conn.execute(text(cmd))
   cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]

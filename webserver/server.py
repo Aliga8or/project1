@@ -435,7 +435,9 @@ def addingredients():
   
   htmlStr = ""
 
-  rid = int(request.args.get('rid'))
+  if request.method == 'GET':
+  	rid = int(request.args.get('rid'))
+  
   cmd = 'SELECT * FROM ingredient'
   cursor = g.conn.execute(text(cmd))
   cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]

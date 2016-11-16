@@ -438,7 +438,7 @@ def addingredients():
   if request.method == 'GET':
   	rid = int(request.args.get('rid'))
   
-  cmd = 'SELECT * FROM ingredient'
+  cmd = 'SELECT * FROM ingredient ORDER BY name'
   cursor = g.conn.execute(text(cmd))
   cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
   
@@ -451,13 +451,16 @@ def addingredients():
   htmlStr += "</select></div>"
   
   if request.method == 'POST':
-  	rid = request.form['rid']
-  	ing_id = request.form['ing_id']
-  	quant = request.form['quantity']
-  	units = request.form['units']
-  	cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
-  	g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
-  
+  	if request.form.['ing_id'] != 'NA'
+  		rid = request.form['rid']
+  		ing_id = request.form['ing_id']
+	  	quant = request.form['quantity']
+	  	units = request.form['units']
+	  	cmd1 = 'INSERT INTO includes_ingredient VALUES ((:iid), (:rid1), (:quant1), (:units1))'
+	  	g.conn.execute(text(cmd1), iid = ing_id, rid1 = rid, quant1 = quant, units1 = units)
+	  else:
+	  	error = "You must select an ingredient"
+	  	return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr, error=error)
   cursor.close()
   return render_template("addingredients.html", rid=rid, name=name, htmlStr = htmlStr)
 

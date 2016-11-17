@@ -378,12 +378,14 @@ def show_recipe():
 	cmd2 = 'SELECT * FROM has_tag WHERE has_tag.rid = (:input_rid)'
 	cmd3 = 'SELECT u.name, c.content, c.post_time FROM comment_make as c, users as u WHERE c.rid=(:input_rid) AND c.uid = u.uid'
 	cmd4 = 'SELECT r.name, r.rid FROM recipe_create as r, similar_recipes as s WHERE s.rid1 = (:input_rid) AND s.rid2=r.rid'
+	cmd5 = 'SELECT r.name, r.loc FROM prepares_recipe as p, restaurant_add as r WHERE p.rid=(:input_rid) AND p.res_id = r.res_id'
 
 	cursor = g.conn.execute(text(cmd), input_rid = rid)
 	cursor1 = g.conn.execute(text(cmd1), input_rid = rid)
 	cursor2 = g.conn.execute(text(cmd2), input_rid = rid)
 	cursor3 = g.conn.execute(text(cmd3), input_rid = rid)
 	cursor4 = g.conn.execute(text(cmd4), input_rid = rid)
+	cursor5 = g.conn.execute(text(cmd5), input_rid = rid)
 	cache = [{'name': row['name'], 'cuisine': row['cuisine'], 'category': row['category'], 'instructions': row['instructions']} for row in cursor]
 
 	#recipe title
@@ -412,12 +414,16 @@ def show_recipe():
 	htmlStr += "<div class='special'>Recipes Similar to This:</div>"
 	for result in cursor4:
 		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+str(result['name'])+"</a></div>"
+	htmlStr += "<div class='special'>Restaurants That Serve This Dish:</div>"
+	for result in cursor5:
+		htmlStr += "<div class='eList'>"+str(result['name'])+" ("+str(result['loc'])+")</div>"
 
   cursor.close()
   cursor1.close()
   cursor2.close()
   cursor3.close()
   cursor4.close()
+  cursor5.close()
   print "Exiting show recipe"
   return render_template("show_recipe.html", htmlStr=htmlStr)
 

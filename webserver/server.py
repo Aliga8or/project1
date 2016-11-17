@@ -309,25 +309,25 @@ def dashboard():
 	cursor = g.conn.execute(text(cmd), input_uid = uid)
 	htmlStr += "<div class='special'> My Recipes: </div>"
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+result['name'].encode('utf-8')+"</a></div>"
 		
-	cmd = 'SELECT rec.name as name FROM favourites_recipe as fav, recipe_create as rec WHERE fav.rid = rec.rid and fav.uid = (:input_uid)'
+	cmd = 'SELECT rec.name as name, rec.rid as rid FROM favourites_recipe as fav, recipe_create as rec WHERE fav.rid = rec.rid and fav.uid = (:input_uid)'
 	cursor = g.conn.execute(text(cmd), input_uid = uid)
 	htmlStr += "<div class='special'> Favorites: </div>"
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+result['name'].encode('utf-8')+"</a></div>"
 		
-	cmd = 'SELECT rec.name as name, rate.rating as ratings FROM rates_recipe as rate, recipe_create as rec WHERE rate.rid = rec.rid and rate.uid =  (:input_uid)'
+	cmd = 'SELECT rec.name as name, rec.rid as rid, rate.rating as ratings FROM rates_recipe as rate, recipe_create as rec WHERE rate.rid = rec.rid and rate.uid =  (:input_uid)'
 	cursor = g.conn.execute(text(cmd), input_uid = uid)
 	htmlStr += "<div class='special'> My Ratings: </div>"
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+"You rated "+str(result['name'])+" "+str(result['ratings'])+"/5"+"</div>"
+		htmlStr += "<div class='eList'>"+"You rated <a href='/show_recipe?rid="+str(result['rid'])+"'>"+result['name'].encode('utf-8')+"</a> "+str(result['ratings'])+"/5"+"</div>"
 		
-	cmd = 'SELECT rcc.name as name FROM recommended_recipe as rcm, recipe_create as rcc WHERE rcm.rid = rcc.rid and rcm.uid =  (:input_uid)'
+	cmd = 'SELECT rcc.name as name, rcc.rid as rid FROM recommended_recipe as rcm, recipe_create as rcc WHERE rcm.rid = rcc.rid and rcm.uid =  (:input_uid)'
 	cursor = g.conn.execute(text(cmd), input_uid = uid)
 	htmlStr += "<div class='special'> Recommended Recipes for you: </div>"
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+result['name'].encode('utf-8')+"</a></div>"
 	
 	htmlStr += "<div class='special'>Top 3 Contributors:</div>"
 	cmd = 'SELECT u.name, COUNT(r.rid) as Recipes_Posted FROM users as u, recipe_create as r WHERE u.uid=r.uid GROUP BY u.name ORDER BY Recipes_Posted DESC LIMIT 3'
@@ -335,10 +335,10 @@ def dashboard():
 	for result in cursor:
 		htmlStr += "<div class='eList'>"+str(result['name'])+"</div>"
 	htmlStr += "<div class='special'>3 Top Rated Recipes:</div>"
-	cmd = 'SELECT r.name as recipe, SUM(CAST(x.rating as float))/COUNT(CAST(x.rating as float)) as score FROM recipe_create as r, rates_recipe as x WHERE r.rid=x.rid GROUP BY r.name ORDER BY score DESC LIMIT 3'
+	cmd = 'SELECT r.name as name, r.rid as rid, SUM(CAST(x.rating as float))/COUNT(CAST(x.rating as float)) as score FROM recipe_create as r, rates_recipe as x WHERE r.rid=x.rid GROUP BY r.rid ORDER BY score DESC LIMIT 3'
 	cursor = g.conn.execute(text(cmd))
 	for result in cursor:
-		htmlStr += "<div class='eList'>"+str(result['recipe'])+"</div>"
+		htmlStr += "<div class='eList'><a href='/show_recipe?rid="+str(result['rid'])+"'>"+result['name'].encode('utf-8')+"</a> ("+str(round(result['score'], 2))+"/5.0)</div>"
 
 	cursor.close()
 	
@@ -358,8 +358,20 @@ def show_recipe():
   
   if request.method == 'GET': 
 	print "Entered GET"
+	print request.args.get('rid')
+	
+	if request.args.get('rid') == None:
+		print "rid is None, redirecting..."
+		return redirect('/search')
+		
+	try:
+		print "In Try"
+		int(request.args.get('rid'))
+	except ValueError:
+		print "Exception NaN, redirecting..."
+		return redirect('/search')
+	
 	rid = int(request.args.get('rid'))
-	print "rid:"+str(rid)
 	
 	cmd = 'SELECT * FROM recipe_create WHERE rid=(:input_rid)'
 	cmd1 = 'SELECT ing.name, inc.quantity, inc.units FROM ingredient as ing, includes_ingredient as inc WHERE inc.rid=(:input_rid) AND inc.ing_id=ing.ing_id'
@@ -450,9 +462,19 @@ def addrecipe():
 		if request.form['tag'] != "NA":
 			cmd = 'INSERT INTO has_tag VALUES ((:tname), (:rid1))'
 			g.conn.execute(text(cmd), tname=request.form['tag'], rid1 = rid)
-	  	
+			
+		cmd = 'SELECT * FROM ingredient ORDER BY name'
+		cursor = g.conn.execute(text(cmd))
+		cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
+		
+		ingStr = "<div class='eList'>Ingredient: <select name='ing_id'>"
+		ingStr += "<option value='NA'>----------</option>"
+		for result in cache:
+			ingStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
+		ingStr += "</select></div>"
+		
 		cursor.close()
-	  	return redirect('/addingredients?rid='+str(rid))
+	  	return render_template("addingredients.html", rid=str(rid), name=name, htmlStr = ingStr)
 	  else:
 	  	error = "<div class='errList'>Please fill in all values marked *</div>"
 	  	return render_template('create_recipe.html', name=name, error=error, htmlStr=htmlStr)
@@ -466,39 +488,26 @@ def addingredients():
 	name = session['name']
   else:
 	return redirect('/')
-	
-  #htmlStr = "<div class='logBar'>Hi, "+name+" !!!</div>"
   
   htmlStr = ""
 
   if request.method == 'GET':
-	print request.args.get('rid')			
-	if request.args.get('rid') == None:
-		print "rid is None, redirecting..."
-		return redirect('/addrecipe')
-
-	try:
-		print "In Try"
-		int(request.args.get('rid'))
-	except ValueError:
-		print "Exception NaN, redirecting..."
-		return redirect('/addrecipe')
-	
-  	rid = int(request.args.get('rid'))
-  
-  cmd = 'SELECT * FROM ingredient ORDER BY name'
-  cursor = g.conn.execute(text(cmd))
-  cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor] 
-  
-  htmlStr += "<div class='eList'>Ingredient: <select name='ing_id'>"
-  htmlStr += "<option value='NA'>----------</option>"
-  for result in cache:
-	htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
-  htmlStr += "</select></div>"
+	print "Request type is GET, redirecting..."
+	return redirect('/addrecipe')
   
   if request.method == 'POST':
+	cmd = 'SELECT * FROM ingredient ORDER BY name'
+	cursor = g.conn.execute(text(cmd))
+	cache = [{'ing_id': row['ing_id'], 'name': row['name']} for row in cursor]
+	
+	htmlStr += "<div class='eList'>Ingredient: <select name='ing_id'>"
+	htmlStr += "<option value='NA'>----------</option>"
+	for result in cache:
+		htmlStr += "<option value='"+str(result['ing_id'])+"'>"+str(result['name'])+"</option>"
+	htmlStr += "</select></div>"
+	rid = request.form['rid']
+	
   	if request.form['ing_id'] != 'NA':
-  		rid = request.form['rid']
   		ing_id = request.form['ing_id']
 	  	quant = request.form['quantity']
 	  	units = request.form['units']
